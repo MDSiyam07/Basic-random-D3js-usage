@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<div id="container">
+    <button onclick="window.setData()">Click me !</button>
+</div>
+<script type="module">
+
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+import {randomUniform} from "https://cdn.skypack.dev/d3-random@3";
+
+// Declare the chart dimensions and margins.
+const width = 640;
+const height = 400;
+const marginTop = 20;
+const marginRight = 20;
+const marginBottom = 30;
+const marginLeft = 40;
+
+// Declare the x (horizontal position) scale.
+const x = d3.scaleUtc()
+    .domain([new Date("2023-01-01"), new Date("2024-01-01")])
+    .range([marginLeft, width - marginRight]);
+
+// Declare the y (vertical position) scale.
+const y = d3.scaleLinear()
+    .domain([0, 100])
+    .range([height - marginBottom, marginTop]);
+
+// Create the SVG container.
+const svg = d3.create("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+// Add the x-axis.
+svg.append("g")
+    .attr("transform", `translate(0,${height - marginBottom})`)
+    .call(d3.axisBottom(x));
+
+// Add the y-axis.
+svg.append("g")
+    .attr("transform", `translate(${marginLeft},0)`)
+    .call(d3.axisLeft(y));
+
+const dataGroup = svg.append("g");
+const generateData = () => {
+    let data = [],
+        nb = randomUniform(1, 100),
+        dateR = randomUniform(1672531200, 1704067200);
+
+    for(var i = 0; i < nb(); i++) {
+        data.push({
+            date: new Date(dateR()*1000),
+            percent: nb()
+        });
+    }
+    
+    return data;
+}
+window.setData = () => {
+    let data = generateData();
+
+    dataGroup
+        .selectAll('circle')
+        .data(data)
+        .join(
+            (enter) => enter.append('circle')
+                    .attr('r', 0)
+                    .attr("fill", (d, i) => d3.interpolateRainbow(i / data.length))
+                    .attr('cx', d => x(d.date))
+                    .attr('cy', d => y(d.percent))
+                    .style('opacity', 0)
+                    .transition()
+                    .duration(500)
+                    .attr('r', 10)
+                    .style('opacity', 1),
+
+            (update) => update
+                    .transition(d3.transition().duration(500))
+                    .attr("fill", (d, i) => d3.interpolateRainbow(i / data.length))
+                    .attr('cx', d => x(d.date))
+                    .attr('cy', d => y(d.percent)),
+            (remove) => remove
+                .transition()
+                .duration(500)
+                .style('opacity', 0)
+                .attr('r', 0)
+                .remove()
+        );
+};
+
+
+window.setData();
+
+// Append the SVG element.
+container.append(svg.node());
+
+</script>
